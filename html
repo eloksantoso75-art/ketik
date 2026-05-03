@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Latihan Mengetik 10 Jari</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Outfit', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .char-correct { color: #22c55e; }
+    .char-wrong { color: #ef4444; background: rgba(239,68,68,0.15); border-radius: 2px; }
+    .char-current { border-bottom: 2.5px solid #3b82f6; animation: blink 1s step-end infinite; }
+    .char-pending { color: #94a3b8; }
+    @keyframes blink { 50% { border-color: transparent; } }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    .fade-in-d1 { animation-delay: 0.05s; opacity:0; }
+    .fade-in-d2 { animation-delay: 0.1s; opacity:0; }
+    .fade-in-d3 { animation-delay: 0.15s; opacity:0; }
+    .stat-card { backdrop-filter: blur(12px); }
+    #text-display { line-height: 2; letter-spacing: 0.02em; }
+    textarea:focus { outline: none; }
+    .glow { box-shadow: 0 0 40px rgba(59,130,246,0.08); }
+    .guide-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+    .guide-content { background: #1e222e; border-radius: 24px; max-width: 900px; max-height: 90%; overflow-y: auto; border: 1px solid rgba(255,255,255,0.08); }
+    .guide-header { position: sticky; top: 0; padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; background: #1e222e; }
+    .guide-body { padding: 24px; }
+    .guide-section { margin-bottom: 32px; }
+    .guide-section h3 { color: #3b82f6; font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+    .guide-section p { color: #cbd5e1; line-height: 1.8; margin-bottom: 12px; font-size: 14px; }
+    .keyboard-visual { background: #0f1117; padding: 16px; border-radius: 12px; margin: 16px 0; }
+    .key-row { display: flex; gap: 6px; margin-bottom: 8px; justify-content: center; }
+    .key { width: 40px; height: 40px; background: #2d3139; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; font-weight: 500; }
+    .key.home { background: #1e40af; color: #fff; border-color: #3b82f6; }
+    .key.left-hand { background: #065f46; color: #86efac; border-color: #22c55e; }
+    .key.right-hand { background: #7c2d12; color: #fed7aa; border-color: #ea580c; }
+    .tip-box { background: rgba(59,130,246,0.1); border-left: 3px solid #3b82f6; padding: 12px; border-radius: 6px; margin: 12px 0; color: #cbd5e1; font-size: 13px; line-height: 1.6; }
+    .close-guide { cursor: pointer; font-size: 24px; color: #94a3b8; }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full overflow-auto" style="background:#0f1117;">
+  <div id="app" class="h-full w-full flex flex-col items-center justify-center p-4 sm:p-8" style="min-height:100%;">
+   <div class="w-full max-w-3xl mx-auto fade-in">
+    <!-- Header -->
+    <div class="text-center mb-8">
+     <div class="inline-flex items-center gap-3 mb-2">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);">
+       <i data-lucide="keyboard" style="width:20px;height:20px;color:#fff;"></i>
+      </div>
+      <h1 id="app-title" class="text-2xl sm:text-3xl font-bold" style="color:#e2e8f0;">Latihan Mengetik 10 Jari</h1>
+     </div>
+     <p class="text-sm mt-1" style="color:#64748b;">Mulai mengetik untuk memulai timer</p><button id="guide-btn" class="mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors" style="background:rgba(59,130,246,0.15);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);"> <i data-lucide="help-circle" style="width:14px;height:14px;"></i> Panduan Mengetik </button>
+    </div><!-- Stats -->
+    <div class="grid grid-cols-3 gap-3 mb-6 fade-in fade-in-d1">
+     <div class="stat-card rounded-2xl p-4 text-center" style="background:rgba(30,34,46,0.8);border:1px solid rgba(255,255,255,0.06);">
+      <div class="flex items-center justify-center gap-1.5 mb-1">
+       <i data-lucide="timer" style="width:14px;height:14px;color:#3b82f6;"></i> <span id="timer-label" class="text-xs font-medium uppercase tracking-wider" style="color:#64748b;">Waktu</span>
+      </div><span id="timer" class="mono text-3xl font-bold" style="color:#e2e8f0;">60</span> <span class="text-xs" style="color:#475569;">detik</span>
+     </div>
+     <div class="stat-card rounded-2xl p-4 text-center" style="background:rgba(30,34,46,0.8);border:1px solid rgba(255,255,255,0.06);">
+      <div class="flex items-center justify-center gap-1.5 mb-1">
+       <i data-lucide="zap" style="width:14px;height:14px;color:#f59e0b;"></i> <span id="wpm-label" class="text-xs font-medium uppercase tracking-wider" style="color:#64748b;">WPM</span>
+      </div><span id="wpm" class="mono text-3xl font-bold" style="color:#e2e8f0;">0</span>
+     </div>
+     <div class="stat-card rounded-2xl p-4 text-center" style="background:rgba(30,34,46,0.8);border:1px solid rgba(255,255,255,0.06);">
+      <div class="flex items-center justify-center gap-1.5 mb-1">
+       <i data-lucide="target" style="width:14px;height:14px;color:#22c55e;"></i> <span id="accuracy-label" class="text-xs font-medium uppercase tracking-wider" style="color:#64748b;">Akurasi</span>
+      </div><span id="accuracy" class="mono text-3xl font-bold" style="color:#e2e8f0;">100</span> <span class="text-xs" style="color:#475569;">%</span>
+     </div>
+    </div><!-- Text Display -->
+    <div id="text-display" class="mono text-base sm:text-lg rounded-2xl p-5 sm:p-6 mb-4 glow fade-in fade-in-d2" style="background:rgba(30,34,46,0.9);border:1px solid rgba(255,255,255,0.06);"></div><!-- Input --> <textarea id="input-area" class="mono w-full rounded-2xl p-5 text-base sm:text-lg resize-none fade-in fade-in-d2" rows="3" style="background:rgba(22,25,35,0.9);border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;caret-color:#3b82f6;" placeholder="Mulai mengetik di sini..."></textarea> <!-- Reset -->
+    <div class="flex justify-center mt-5 fade-in fade-in-d3">
+     <button id="reset-btn" class="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95" style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;"> <i data-lucide="rotate-ccw" style="width:16px;height:16px;"></i> <span id="reset-text">Ulangi Latihan</span> </button>
+    </div><!-- Result overlay -->
+    <div id="result-overlay" class="hidden mt-6 rounded-2xl p-6 text-center fade-in" style="background:rgba(30,34,46,0.95);border:1px solid rgba(255,255,255,0.08);">
+     <div class="text-lg font-bold mb-1" style="color:#e2e8f0;">
+      ⏱️ Waktu Habis!
+     </div>
+     <div class="text-sm" style="color:#94a3b8;">
+      Hasil kamu:
+     </div>
+     <div class="flex justify-center gap-8 mt-3">
+      <div><span id="final-wpm" class="mono text-2xl font-bold" style="color:#f59e0b;">0</span><span class="text-xs ml-1" style="color:#64748b;">WPM</span>
+      </div>
+      <div><span id="final-acc" class="mono text-2xl font-bold" style="color:#22c55e;">0</span><span class="text-xs ml-1" style="color:#64748b;">% Akurasi</span>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div><!-- Guide Modal -->
+  <div id="guide-modal" class="guide-modal hidden">
+   <div class="guide-content">
+    <div class="guide-header">
+     <h2 style="color:#e2e8f0; font-size:24px; font-weight:700; margin:0;">Panduan Mengetik 10 Jari</h2><span class="close-guide">×</span>
+    </div>
+    <div class="guide-body"><!-- Posisi Dasar -->
+     <div class="guide-section">
+      <h3>🎯 Posisi Dasar (Home Row)</h3>
+      <p>Posisi dasar adalah fondasi mengetik 10 jari. Letakkan jari Anda di baris home row (baris tengah keyboard):</p>
+      <div class="keyboard-visual">
+       <div class="key-row">
+        <div class="key left-hand">
+         A
+        </div>
+        <div class="key left-hand">
+         S
+        </div>
+        <div class="key left-hand">
+         D
+        </div>
+        <div class="key left-hand">
+         F
+        </div>
+        <div class="key home">
+         J
+        </div>
+        <div class="key right-hand">
+         K
+        </div>
+        <div class="key right-hand">
+         L
+        </div>
+        <div class="key right-hand">
+         ;
+        </div>
+       </div>
+      </div>
+      <div class="tip-box"><strong>Perhatian:</strong> Jari telunjuk kiri dan kanan harus berada di atas tombol F dan J (yang memiliki garis titik di keyboard fisik).
+      </div>
+     </div><!-- Penempatan Jari -->
+     <div class="guide-section">
+      <h3>👆 Penempatan Jari Setiap Tangan</h3>
+      <p><strong>Tangan Kiri (Hijau):</strong></p>
+      <ul style="color:#cbd5e1; margin-left:16px; line-height:2;">
+       <li>✋ Kelingking: A</li>
+       <li>✋ Jari manis: S</li>
+       <li>✋ Jari tengah: D</li>
+       <li>✋ Jari telunjuk: F, G</li>
+      </ul>
+      <p style="margin-top:16px;"><strong>Tangan Kanan (Oranye):</strong></p>
+      <ul style="color:#cbd5e1; margin-left:16px; line-height:2;">
+       <li>✋ Jari telunjuk: J, H</li>
+       <li>✋ Jari tengah: K</li>
+       <li>✋ Jari manis: L</li>
+       <li>✋ Kelingking: ;</li>
+      </ul>
+     </div><!-- Teknik Jempol -->
+     <div class="guide-section">
+      <h3>👍 Teknik Jempol</h3>
+      <p>Kedua jempol berada di atas spasi. Gunakan jempol untuk menekan spasi. Jempol adalah jari yang paling kuat!</p>
+     </div><!-- Tips Efektif -->
+     <div class="guide-section">
+      <h3>⚡ Tips Menghafal Letak Huruf</h3>
+      <ol style="color:#cbd5e1; margin-left:16px; line-height:2.2;">
+       <li><strong>Mulai dengan Home Row:</strong> Hafalkan 8 tombol dasar (A S D F J K L ;) sampai otomatis tanpa melihat.</li>
+       <li><strong>Perluas Secara Bertahap:</strong> Setelah 3-5 hari, tambahkan baris atas (QWERTY...), lalu baris bawah.</li>
+       <li><strong>Latih Dengan Tempo Lambat:</strong> Kecepatan datang otomatis setelah akurasi sempurna. Prioritaskan akurasi dulu!</li>
+       <li><strong>Jangan Lihat Keyboard:</strong> Tutup mata atau letakkan penghalang di depan tangan Anda saat latihan.</li>
+       <li><strong>Latih Setiap Hari:</strong> 15-30 menit latihan konsisten setiap hari lebih baik dari 3 jam sekali seminggu.</li>
+       <li><strong>Gunakan Touch Typing:</strong> Ingat pola pergerakan tangan, bukan lokasi tombol secara visual.</li>
+       <li><strong>Dengarkan Suara:</strong> Seiring waktu, Anda akan mengenal suara setiap tombol dan bisa mengetik dengan perasaan/hearing.</li>
+      </ol>
+     </div><!-- Ergonomi -->
+     <div class="guide-section">
+      <h3>🪑 Ergonomi &amp; Postur</h3>
+      <div class="tip-box">
+       • Duduk dengan postur tegak, bahu rileks<br>
+        • Siku membentuk sudut 90 derajat<br>
+        • Pergelangan tangan lurus, tidak membengkok<br>
+        • Layar setinggi mata, jauh 50-70 cm<br>
+        • Kaki rata di lantai atau footrest<br>
+        Postur yang benar mencegah cedera dan meningkatkan kecepatan mengetik!
+      </div>
+     </div><!-- Tahap Pembelajaran -->
+     <div class="guide-section">
+      <h3>📈 Tahap Pembelajaran</h3>
+      <p><strong>Minggu 1:</strong> Home Row (A S D F J K L ;) - Target: 100% akurasi</p>
+      <p><strong>Minggu 2:</strong> Tambah baris atas (Q W E R T Y U I O P) - Target: 95% akurasi</p>
+      <p><strong>Minggu 3:</strong> Tambah baris bawah (Z X C V B N M) - Target: 90% akurasi</p>
+      <p><strong>Minggu 4+:</strong> Angka, simbol, dan kecepatan - Target: 60+ WPM dengan 98% akurasi</p>
+     </div><!-- Motivasi -->
+     <div class="guide-section" style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 24px;">
+      <h3>🎉 Milestone Kecepatan</h3>
+      <ul style="color:#cbd5e1; margin-left:16px; line-height:2;">
+       <li>30 WPM: Pemula - Sudah cukup untuk pekerjaan kantor</li>
+       <li>60 WPM: Menengah - Kecepatan yang dikurangi kantor umumnya</li>
+       <li>80+ WPM: Mahir - Mengetik dengan sangat lancar</li>
+       <li>100+ WPM: Profesional - Mengetik seperti native speaker kecepatan!</li>
+      </ul>
+      <div class="tip-box" style="margin-top:16px;"><strong>Ingat:</strong> Setiap orang belajar dengan kecepatan berbeda. Fokus pada konsistensi, bukan kecepatan awal. Akurasi adalah raja dalam mengetik 10 jari!
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    const paragraphs = [
+      "Pendidikan merupakan kunci utama dalam membangun peradaban bangsa yang maju dan bermartabat di era modern ini.",
+      "Keindahan alam Indonesia membentang dari Sabang sampai Merauke dengan keanekaragaman hayati yang luar biasa.",
+      "Teknologi informasi telah mengubah cara manusia berkomunikasi dan bekerja dalam kehidupan sehari-hari secara drastis.",
+      "Membaca buku adalah kebiasaan yang sangat baik untuk memperluas wawasan dan meningkatkan kemampuan berpikir kritis.",
+      "Olahraga teratur dan pola makan seimbang merupakan fondasi utama untuk menjaga kesehatan tubuh dan pikiran.",
+      "Kerjasama tim yang solid dan komunikasi yang efektif menjadi kunci keberhasilan dalam setiap proyek besar.",
+      "Budaya gotong royong merupakan warisan leluhur bangsa Indonesia yang harus terus dijaga dan dilestarikan.",
+      "Kreativitas dan inovasi menjadi modal penting dalam menghadapi tantangan dunia kerja yang semakin kompetitif.",
+      "Menjaga kelestarian lingkungan hidup adalah tanggung jawab bersama demi masa depan generasi yang akan datang.",
+      "Semangat pantang menyerah dan kerja keras adalah kunci untuk meraih kesuksesan dalam setiap bidang kehidupan."
+    ];
+
+    let currentText = '';
+    let timerInterval = null;
+    let timeLeft = 60;
+    let started = false;
+    let correctChars = 0;
+    let totalTyped = 0;
+
+    const display = document.getElementById('text-display');
+    const input = document.getElementById('input-area');
+    const timerEl = document.getElementById('timer');
+    const wpmEl = document.getElementById('wpm');
+    const accEl = document.getElementById('accuracy');
+    const resetBtn = document.getElementById('reset-btn');
+    const resultOverlay = document.getElementById('result-overlay');
+    const guideBtn = document.getElementById('guide-btn');
+    const guideModal = document.getElementById('guide-modal');
+    const closeGuide = document.querySelector('.close-guide');
+
+    function pickText() {
+      currentText = paragraphs[Math.floor(Math.random() * paragraphs.length)];
+    }
+
+    function renderDisplay() {
+      const typed = input.value;
+      let html = '';
+      for (let i = 0; i < currentText.length; i++) {
+        const ch = currentText[i] === ' ' ? '&nbsp;' : currentText[i];
+        if (i < typed.length) {
+          html += typed[i] === currentText[i]
+            ? `<span class="char-correct">${ch}</span>`
+            : `<span class="char-wrong">${ch}</span>`;
+        } else if (i === typed.length) {
+          html += `<span class="char-current char-pending">${ch}</span>`;
+        } else {
+          html += `<span class="char-pending">${ch}</span>`;
+        }
+      }
+      display.innerHTML = html;
+    }
+
+    function updateStats() {
+      const typed = input.value;
+      correctChars = 0;
+      totalTyped = typed.length;
+      for (let i = 0; i < typed.length; i++) {
+        if (typed[i] === currentText[i]) correctChars++;
+      }
+      const elapsed = 60 - timeLeft;
+      const wpm = elapsed > 0 ? Math.round((correctChars / 5) / (elapsed / 60)) : 0;
+      const acc = totalTyped > 0 ? Math.round((correctChars / totalTyped) * 100) : 100;
+      wpmEl.textContent = wpm;
+      accEl.textContent = acc;
+    }
+
+    function endTest() {
+      clearInterval(timerInterval);
+      input.disabled = true;
+      input.style.opacity = '0.5';
+      document.getElementById('final-wpm').textContent = wpmEl.textContent;
+      document.getElementById('final-acc').textContent = accEl.textContent;
+      resultOverlay.classList.remove('hidden');
+    }
+
+    function startTimer() {
+      started = true;
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = timeLeft;
+        if (timeLeft <= 0) endTest();
+      }, 1000);
+    }
+
+    function reset() {
+      clearInterval(timerInterval);
+      timeLeft = 60;
+      started = false;
+      correctChars = 0;
+      totalTyped = 0;
+      timerEl.textContent = '60';
+      wpmEl.textContent = '0';
+      accEl.textContent = '100';
+      input.value = '';
+      input.disabled = false;
+      input.style.opacity = '1';
+      resultOverlay.classList.add('hidden');
+      pickText();
+      renderDisplay();
+      input.focus();
+    }
+
+    input.addEventListener('input', () => {
+      if (!started && input.value.length > 0) startTimer();
+      if (input.value.length > currentText.length) {
+        input.value = input.value.slice(0, currentText.length);
+      }
+      renderDisplay();
+      updateStats();
+      if (input.value.length === currentText.length) endTest();
+    });
+
+    resetBtn.addEventListener('click', reset);
+
+    guideBtn.addEventListener('click', () => {
+      guideModal.classList.remove('hidden');
+    });
+
+    closeGuide.addEventListener('click', () => {
+      guideModal.classList.add('hidden');
+    });
+
+    guideModal.addEventListener('click', (e) => {
+      if (e.target === guideModal) {
+        guideModal.classList.add('hidden');
+      }
+    });
+
+    // Default config
+    const defaultConfig = {
+      background_color: '#0f1117',
+      surface_color: '#1e222e',
+      text_color: '#e2e8f0',
+      primary_action_color: '#3b82f6',
+      secondary_action_color: '#8b5cf6',
+      font_family: 'Outfit',
+      font_size: 16,
+      app_title: 'Latihan Mengetik 10 Jari',
+      timer_label: 'Waktu',
+      wpm_label: 'WPM',
+      accuracy_label: 'Akurasi',
+      reset_button_text: 'Ulangi Latihan'
+    };
+
+    function applyConfig(config) {
+      const bg = config.background_color || defaultConfig.background_color;
+      const surface = config.surface_color || defaultConfig.surface_color;
+      const text = config.text_color || defaultConfig.text_color;
+      const primary = config.primary_action_color || defaultConfig.primary_action_color;
+      const secondary = config.secondary_action_color || defaultConfig.secondary_action_color;
+      const font = config.font_family || defaultConfig.font_family;
+      const size = config.font_size || defaultConfig.font_size;
+
+      document.body.style.background = bg;
+      document.querySelectorAll('.stat-card').forEach(c => c.style.background = `${surface}cc`);
+      display.style.background = `${surface}e6`;
+      document.getElementById('input-area').style.background = `${surface}cc`;
+      resultOverlay.style.background = `${surface}f2`;
+
+      document.getElementById('app-title').style.color = text;
+      document.getElementById('app-title').textContent = config.app_title || defaultConfig.app_title;
+      timerEl.style.color = text;
+      wpmEl.style.color = text;
+      accEl.style.color = text;
+      input.style.color = text;
+
+      resetBtn.style.background = `linear-gradient(135deg,${primary},${secondary})`;
+
+      const fontStack = `${font}, Outfit, sans-serif`;
+      document.body.style.fontFamily = fontStack;
+      document.getElementById('app-title').style.fontFamily = fontStack;
+
+      document.getElementById('timer-label').textContent = config.timer_label || defaultConfig.timer_label;
+      document.getElementById('wpm-label').textContent = config.wpm_label || defaultConfig.wpm_label;
+      document.getElementById('accuracy-label').textContent = config.accuracy_label || defaultConfig.accuracy_label;
+      document.getElementById('reset-text').textContent = config.reset_button_text || defaultConfig.reset_button_text;
+
+      // Font size scaling
+      display.style.fontSize = `${size}px`;
+      input.style.fontSize = `${size}px`;
+      document.getElementById('app-title').style.fontSize = `${size * 1.8}px`;
+    }
+
+    function makeRecolorable(key) {
+      return {
+        get: () => (window.elementSdk?.config?.[key]) || defaultConfig[key],
+        set: (v) => { window.elementSdk?.setConfig({ [key]: v }); }
+      };
+    }
+
+    window.elementSdk.init({
+      defaultConfig,
+      onConfigChange: async (config) => applyConfig(config),
+      mapToCapabilities: (config) => ({
+        recolorables: [
+          makeRecolorable('background_color'),
+          makeRecolorable('surface_color'),
+          makeRecolorable('text_color'),
+          makeRecolorable('primary_action_color'),
+          makeRecolorable('secondary_action_color')
+        ],
+        borderables: [],
+        fontEditable: {
+          get: () => config.font_family || defaultConfig.font_family,
+          set: (v) => window.elementSdk.setConfig({ font_family: v })
+        },
+        fontSizeable: {
+          get: () => config.font_size || defaultConfig.font_size,
+          set: (v) => window.elementSdk.setConfig({ font_size: v })
+        }
+      }),
+      mapToEditPanelValues: (config) => new Map([
+        ['app_title', config.app_title || defaultConfig.app_title],
+        ['timer_label', config.timer_label || defaultConfig.timer_label],
+        ['wpm_label', config.wpm_label || defaultConfig.wpm_label],
+        ['accuracy_label', config.accuracy_label || defaultConfig.accuracy_label],
+        ['reset_button_text', config.reset_button_text || defaultConfig.reset_button_text]
+      ])
+    });
+
+    pickText();
+    renderDisplay();
+    lucide.createIcons();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f5cc5c0212bf4e4',t:'MTc3Nzc4NTE2NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
